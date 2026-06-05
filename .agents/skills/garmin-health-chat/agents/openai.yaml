@@ -1,0 +1,4 @@
+interface:
+  display_name: "Garmin Health Chat"
+  short_description: "Discuss health and recovery using relevant Garmin trends"
+  default_prompt: "Use -health-chat to discuss my current physical condition using recent Garmin data."

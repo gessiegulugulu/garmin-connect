@@ -1,0 +1,4 @@
+interface:
+  display_name: "Garmin Weekly Plan"
+  short_description: "Review seven days and build the next seven-day plan"
+  default_prompt: "Use -weekly-plan to review my last seven days and create the next seven-day training plan."

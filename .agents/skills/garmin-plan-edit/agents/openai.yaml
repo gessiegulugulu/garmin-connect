@@ -1,0 +1,4 @@
+interface:
+  display_name: "Garmin Plan Edit"
+  short_description: "Edit the active seven-day plan from conversation needs"
+  default_prompt: "Use -plan-edit to update my current seven-day training plan based on this conversation."

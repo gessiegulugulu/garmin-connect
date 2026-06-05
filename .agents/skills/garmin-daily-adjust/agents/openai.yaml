@@ -1,0 +1,4 @@
+interface:
+  display_name: "Garmin Daily Adjust"
+  short_description: "Review yesterday and adapt today's training to recovery"
+  default_prompt: "Use -daily-adjust to review yesterday and adjust today's training plan."
