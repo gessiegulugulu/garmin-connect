@@ -113,58 +113,140 @@ def build_page(plan_path: Path, history_dir: Path) -> str:
     history_files = sorted(history_dir.rglob("*.md"), reverse=True)
     plan_html = render_markdown(plan_path.read_text(encoding="utf-8"))
     history_sections = []
+
     for position, path in enumerate(history_files):
         date_match = re.search(r"(\d{4}-\d{2}-\d{2})", path.stem)
         title = f"{date_match.group(1)} 周复盘" if date_match else path.stem.replace("-", " ")
         body = render_markdown(path.read_text(encoding="utf-8"))
         open_attribute = " open" if position == 0 else ""
         history_sections.append(
-            f'<details class="history-item"{open_attribute}>'
+            f'<details class="sport-history-item"{open_attribute}>'
             f"<summary>{html.escape(title)}</summary>"
-            f'<div class="markdown-body">{body}</div>'
+            f'<div class="sport-markdown-body">{body}</div>'
             "</details>"
         )
 
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     history_html = "\n".join(history_sections) or "<p>暂无历史复盘。</p>"
-    return f"""<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>训练计划与复盘</title>
-  <style>
-    :root {{ --bg:#f5f7f3; --card:#fff; --text:#1f2a24; --muted:#66736b; --line:#dce4dd; --accent:#287a52; --soft:#e8f3ec; }}
-    @media (prefers-color-scheme: dark) {{ :root {{ --bg:#111714; --card:#19211d; --text:#edf3ef; --muted:#a7b4ac; --line:#34423a; --accent:#73d09d; --soft:#20382b; }} }}
-    * {{ box-sizing:border-box; }} body {{ margin:0; background:var(--bg); color:var(--text); font:16px/1.75 system-ui,-apple-system,"Segoe UI",sans-serif; }}
-    .shell {{ width:min(1080px, calc(100% - 32px)); margin:0 auto; padding:48px 0 72px; }}
-    header {{ margin-bottom:28px; }} h1 {{ margin:0 0 8px; font-size:clamp(2rem,5vw,3.4rem); line-height:1.15; }}
-    .subtitle,.updated {{ color:var(--muted); }} .updated {{ font-size:.88rem; }}
-    nav {{ display:flex; gap:10px; margin:22px 0; }} nav a {{ color:var(--accent); background:var(--soft); padding:7px 13px; border-radius:999px; text-decoration:none; font-weight:650; }}
-    .card {{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:clamp(20px,4vw,38px); margin:20px 0; box-shadow:0 12px 34px rgb(20 50 35 / 7%); }}
-    h2 {{ margin-top:0; }} h3,h4,h5,h6 {{ margin-top:1.7em; line-height:1.3; }} a {{ color:var(--accent); }} li {{ margin:.35em 0; }}
-    .table-wrap {{ overflow-x:auto; margin:18px 0; }} table {{ width:100%; border-collapse:collapse; min-width:760px; font-size:.94rem; }} th,td {{ border-bottom:1px solid var(--line); padding:11px 12px; text-align:left; vertical-align:top; }} th {{ background:var(--soft); }}
-    code {{ background:var(--soft); border-radius:5px; padding:.1em .35em; }} details {{ border-top:1px solid var(--line); }} details:first-child {{ border-top:0; }}
-    summary {{ cursor:pointer; padding:18px 0; color:var(--accent); font-weight:750; }} .history-item .markdown-body {{ padding:0 0 24px; }}
-    footer {{ color:var(--muted); text-align:center; margin-top:34px; font-size:.9rem; }}
-  </style>
-</head>
-<body>
-  <main class="shell">
-    <header>
-      <p class="subtitle">SPORT / WEEKLY LOG</p>
-      <h1>训练计划与复盘</h1>
-      <p class="subtitle">当前七日训练安排，以及按时间归档的训练复盘。</p>
-      <nav><a href="#plan">本周计划</a><a href="#history">历史复盘</a><a href="/">返回首页</a></nav>
-      <p class="updated">页面生成于 {generated_at}</p>
-    </header>
-    <section id="plan" class="card markdown-body">{plan_html}</section>
-    <section id="history" class="card"><h2>历史复盘</h2>{history_html}</section>
-    <footer>由 Garmin 训练仓库每周自动更新</footer>
-  </main>
-</body>
-</html>
+
+    return f"""---
+title: 训练计划与复盘
+url: /sport/
+summary: Garmin 训练计划与每周复盘
+---
+
+<style>
+  .sport-dashboard {{
+    margin-top: 1.5rem;
+  }}
+
+  .sport-dashboard .sport-meta {{
+    color: var(--secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }}
+
+  .sport-dashboard .sport-nav {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1.2rem 0 2rem;
+  }}
+
+  .sport-dashboard .sport-nav a {{
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }}
+
+  .sport-dashboard .sport-card {{
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    margin: 1.2rem 0;
+    background: var(--entry);
+  }}
+
+  .sport-dashboard h2,
+  .sport-dashboard h3,
+  .sport-dashboard h4,
+  .sport-dashboard h5,
+  .sport-dashboard h6 {{
+    margin-top: 1.6em;
+  }}
+
+  .sport-dashboard .table-wrap {{
+    overflow-x: auto;
+    margin: 1rem 0;
+  }}
+
+  .sport-dashboard table {{
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+    font-size: 0.95rem;
+  }}
+
+  .sport-dashboard th,
+  .sport-dashboard td {{
+    border-bottom: 1px solid var(--border);
+    padding: 0.65rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }}
+
+  .sport-dashboard th {{
+    background: var(--code-bg);
+    font-weight: 700;
+  }}
+
+  .sport-dashboard code {{
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }}
+
+  .sport-dashboard details {{
+    border-top: 1px solid var(--border);
+  }}
+
+  .sport-dashboard details:first-of-type {{
+    border-top: 0;
+  }}
+
+  .sport-dashboard summary {{
+    cursor: pointer;
+    padding: 1rem 0;
+    font-weight: 700;
+  }}
+
+  .sport-dashboard .sport-markdown-body {{
+    padding-bottom: 1.2rem;
+  }}
+</style>
+
+<div class="sport-dashboard">
+  <p class="sport-meta">SPORT / WEEKLY LOG · 页面生成于 {generated_at}</p>
+
+  <p>当前七日训练安排，以及按时间归档的训练复盘。</p>
+
+  <nav class="sport-nav">
+    <a href="#plan">本周计划</a>
+    <a href="#history">历史复盘</a>
+    <a href="/">返回首页</a>
+  </nav>
+
+  <section id="plan" class="sport-card">
+    {plan_html}
+  </section>
+
+  <section id="history" class="sport-card">
+    <h2>历史复盘</h2>
+    {history_html}
+  </section>
+</div>
 """
 
 
@@ -172,7 +254,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--plan", type=Path, default=Path("TRAINING_PLAN.md"))
     parser.add_argument("--history", type=Path, default=Path("history"))
-    parser.add_argument("--output", type=Path, default=Path("dist/sport/index.html"))
+    parser.add_argument("--output", type=Path, default=Path("dist/sport.md"))
     args = parser.parse_args()
 
     if not args.plan.is_file():
