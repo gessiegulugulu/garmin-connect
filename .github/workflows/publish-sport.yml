@@ -1,0 +1,51 @@
+name: Publish sport page
+
+on:
+  schedule:
+    # GitHub cron uses UTC. 00:30 UTC is Monday 08:30 in Asia/Shanghai.
+    - cron: "30 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-sport-page
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out training repository
+        uses: actions/checkout@v4
+
+      - name: Build sport page
+        run: python3 scripts/build_sport_page.py --output dist/sport/index.html
+
+      - name: Check out personal website
+        uses: actions/checkout@v4
+        with:
+          repository: gessiegulugulu/gessiegulugulu.github.io
+          ref: main
+          token: ${{ secrets.WEBSITE_REPO_TOKEN }}
+          path: website
+
+      - name: Update only the sport page
+        run: |
+          mkdir -p website/static/sport
+          cp dist/sport/index.html website/static/sport/index.html
+
+      - name: Commit and push when content changed
+        working-directory: website
+        run: |
+          if [ -z "$(git status --porcelain -- static/sport/index.html)" ]; then
+            echo "Sport page is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- static/sport/index.html
+          git commit -m "chore: update sport page"
+          git push origin HEAD:main

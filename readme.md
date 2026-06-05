@@ -46,6 +46,20 @@ Install the Garmin MCP server from https://github.com/Taxuspt/garmin_mcp, authen
 
 技能允许自然语言触发，显式写 `$skill-name` 保证调用
 
+## 自动发布训练页面
+
+`.github/workflows/publish-sport.yml` 在每周一 8:30 生成训练页面，并只更新网站仓库中的 `static/sport/index.html`。原有的 Hugo 部署 Action 会在收到该提交后正常构建，页面地址为：
+
+<https://gessiegulugulu.github.io/sport/>
+
+首次使用: 
+1. 在本仓库的 `Settings -> Secrets and variables -> Actions` 中添加名为 `WEBSITE_REPO_TOKEN` 的 secret。其值应为一个 fine-grained personal access token，配置如下：
+
+   - Repository access：只选择 `gessiegulugulu/gessiegulugulu.github.io`
+   - Repository permissions：`Contents` 设为 `Read and write`
+
+2. 配置后在 Actions 页面手动运行一次 `Publish sport page`
+
 ## todo
 - [x] 配置skills
     - [x] 健康数据的分析和问答
@@ -53,4 +67,4 @@ Install the Garmin MCP server from https://github.com/Taxuspt/garmin_mcp, authen
     - [x] 每日复盘与当天调整
     - [x] 根据需求修改计划
 - [x] 配置memory：见 [memory.md](memory.md)
-- [ ] 待定是否做可视化或者邮件推送
+- [x] 待定是否做可视化或者邮件推送
