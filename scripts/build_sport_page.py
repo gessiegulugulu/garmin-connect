@@ -153,40 +153,6 @@ summary: Garmin 训练计划与每周复盘
     line-height: 1.75;
   }}
 
-  .sport-dashboard .sport-hero {{
-    position: relative;
-    overflow: hidden;
-    border: 1px solid var(--border);
-    border-radius: calc(var(--radius) + 8px);
-    padding: 1.7rem 1.3rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
-    background:
-      radial-gradient(circle at top left, rgba(120, 160, 255, 0.16), transparent 32rem),
-      radial-gradient(circle at bottom right, rgba(90, 180, 140, 0.12), transparent 28rem),
-      var(--entry);
-  }}
-
-  .sport-dashboard .sport-meta {{
-    color: var(--secondary);
-    font-size: 0.86rem;
-    margin: 0 0 0.45rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }}
-
-  .sport-dashboard .sport-title {{
-    margin: 0;
-    font-size: clamp(1.6rem, 4vw, 2.35rem);
-    line-height: 1.25;
-  }}
-
-  .sport-dashboard .sport-subtitle {{
-    margin: 0.75rem auto 0;
-    max-width: 42rem;
-    color: var(--secondary);
-  }}
-
   .sport-dashboard .sport-nav {{
     display: flex;
     flex-wrap: wrap;
@@ -408,16 +374,10 @@ summary: Garmin 训练计划与每周复盘
 </style>
 
 <div class="sport-dashboard">
-  <header class="sport-hero">
-    <p class="sport-meta">SPORT / WEEKLY LOG · 页面生成于 {generated_at}</p>
-    <h1 class="sport-title">训练计划与复盘</h1>
-    <p class="sport-subtitle">当前七日训练安排，以及按时间归档的训练复盘。</p>
-  </header>
 
   <nav class="sport-nav">
     <a href="#plan">本周计划</a>
     <a href="#history">历史复盘</a>
-    <a href="/">返回首页</a>
   </nav>
 
   <section id="plan" class="sport-card">
