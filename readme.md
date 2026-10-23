@@ -48,7 +48,7 @@ Install the Garmin MCP server from https://github.com/Taxuspt/garmin_mcp, authen
 
 ## 自动发布训练页面
 
-`.github/workflows/publish-sport.yml` 在每周一 8:30 生成训练页面，并只更新网站仓库中的 `static/sport/index.html`。原有的 Hugo 部署 Action 会在收到该提交后正常构建，页面地址为：
+`.github/workflows/publish-sport.yml` 每 3 天北京时间 8:30 同步 Garmin 并生成健康周报（以 2026-10-23 为起点，跨月保持三天间隔）；修改计划、页面脚本或数据后也会更新。流程只修改网站仓库中的 `content/sport.md`，再由原有 Hugo Action 构建，页面地址为：
 
 <https://gessiegulugulu.github.io/sport/>
 
@@ -58,7 +58,43 @@ Install the Garmin MCP server from https://github.com/Taxuspt/garmin_mcp, authen
    - Repository access：只选择 `gessiegulugulu/gessiegulugulu.github.io`
    - Repository permissions：`Contents` 设为 `Read and write`
 
-2. 配置后在 Actions 页面手动运行一次 `Publish sport page`
+2. 添加 `GARMIN_TOKENS_JSON` secret：内容为本机已登录的 `~/.garminconnect/garmin_tokens.json`。不需要上传邮箱或密码。可在本机执行：
+
+   ```bash
+   gh secret set GARMIN_TOKENS_JSON --repo gessiegulugulu/garmin-connect < ~/.garminconnect/garmin_tokens.json
+   ```
+
+   使用 Garmin 中国区账号时，另设置 Actions variable `GARMIN_IS_CN=true`。
+
+3. 配置后在 Actions 页面手动运行一次 `Publish sport page`。
+
+### 页面与数据口径
+
+- 页面采用浅色渐变与磨砂玻璃卡片，左侧展示从今天起的 7 天运动计划，右侧为一周健康指标，下方为运动记录和一周变化。电脑、平板和手机分别适配；点击计划或指标卡可展开明细。
+- 最近一周按上海时间取昨天结束的 7 个完整自然日。例如 2026-10-23 更新时，健康数据为 10-16 至 10-22，计划为 10-23 至 10-29。
+- 计划优先读取 `TRAINING_PLAN.md`，未覆盖的日期读取 `MONTHLY_ROUTINE.md`；都没有的日期显示“待安排”。页面不会重复过期计划或自行生成训练安排。
+- 身体电量为每日最高值的周均值；呼吸为每日清醒呼吸均值的周均值（次/分），卡片下方另列睡眠呼吸均值；夜间 HRV、睡眠时长和压力取有记录日期的均值；活动展示累计步数。睡眠使用专用睡眠摘要，HRV 使用每晚均值，不再对 Garmin 的滚动七日均值重复平均。
+- 每张指标卡标明有效记录天数。缺失数据保留为空，不计入均值；图表不连接缺失日期。缺失睡眠不解释为睡了 0 小时；计划不算作完成记录。
+- `data/garmin-week.json` 只保存每日指标和运动摘要，不含授权、账号标识、运动名称中的私人地点或 GPS 轨迹。未配置 Garmin secret 时，只显示缓存中仍位于最近一周内的数据，并标明同步状态；已配置授权但同步失败时停止发布，保留线上版本。
+- 网页构建本身只依赖 Python 标准库；联网同步使用 `scripts/requirements-dashboard.txt` 中固定版本的 Garmin 客户端。
+
+### 本地更新与预览
+
+```bash
+# 在已安装 Garmin 客户端的 Python 环境中，同步最近一周
+python3 scripts/sync_garmin_data.py
+
+# 生成供 Hugo 发布的 Markdown
+python3 scripts/build_sport_page.py --output dist/sport.md
+
+# 生成可直接用浏览器打开的独立页面
+python3 scripts/build_sport_page.py --standalone --output dist/sport.html
+
+# 检查日期范围、数据缺失处理和计划覆盖规则
+python3 -m unittest discover -s tests -v
+```
+
+同步和构建均支持 `--date YYYY-MM-DD`，便于复现某一天的滚动窗口；构建可用 `--data` 指定另一份周数据。
 
 ## todo
 - [x] 配置skills

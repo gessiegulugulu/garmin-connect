@@ -2,8 +2,17 @@ name: Publish sport page
 
 on:
   schedule:
-    # GitHub cron uses UTC. 00:30 UTC is Monday 08:30 in Asia/Shanghai.
-    - cron: "30 0 * * 0"
+    # Check daily at 08:30 Shanghai time; cadence below runs every three days.
+    - cron: "30 0 * * *"
+  push:
+    branches: [main]
+    paths:
+      - TRAINING_PLAN.md
+      - MONTHLY_ROUTINE.md
+      - data/garmin-week.json
+      - scripts/**
+      - tests/**
+      - .github/workflows/publish-sport.yml
   workflow_dispatch:
 
 permissions:
@@ -14,11 +23,54 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
+  cadence:
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - name: Check three-day cadence
+        id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          from datetime import date, datetime
+          from zoneinfo import ZoneInfo
+          today = datetime.now(ZoneInfo("Asia/Shanghai")).date()
+          due = (today - date(2026, 10, 23)).days % 3 == 0
+          publish = os.environ["EVENT_NAME"] != "schedule" or due
+          print(f"publish={str(publish).lower()}")
+          PY
+
+  publish:
+    needs: cadence
+    if: needs.cadence.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out training repository
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate dashboard
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Sync the last seven complete days from Garmin
+        env:
+          GARMIN_TOKENS_JSON: ${{ secrets.GARMIN_TOKENS_JSON }}
+          GARMIN_IS_CN: ${{ vars.GARMIN_IS_CN }}
+        run: |
+          if [ -n "$GARMIN_TOKENS_JSON" ]; then
+            python3 -m pip install --disable-pip-version-check -r scripts/requirements-dashboard.txt
+            python3 scripts/sync_garmin_data.py
+          else
+            echo "::warning::GARMIN_TOKENS_JSON is not configured. Only in-window cached measurements can be displayed; see readme.md."
+          fi
 
       - name: Check out personal website
         uses: actions/checkout@v4
@@ -42,5 +94,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- content/sport.md
-          git commit -m "chore: update sport page [skip ci]"
+          git commit -m "chore: update sport page"
           git push origin HEAD:main
