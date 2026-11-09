@@ -68,6 +68,10 @@ Install the Garmin MCP server from https://github.com/Taxuspt/garmin_mcp, authen
 
 3. 配置后在 Actions 页面手动运行一次 `Publish sport page`。
 
+同步成功后，刷新的 Garmin 会话会以 AES-256 加密后保存在 Actions 缓存中，下一次运行优先恢复最新会话。缓存只上传 `session.gpg` 密文，不上传 token JSON；加密密钥来自 `GARMIN_TOKENS_JSON`，不需要新增 GitHub 写权限。数据抓取失败时也会保存已刷新的授权，避免下一次重复使用旧 refresh token。
+
+`GARMIN_TOKENS_JSON` 是初始授权和缓存加密依据。重新设置它会切换到新的缓存，适用于授权失效或缓存被清理后的恢复。GitHub 会清理超过 7 天未访问的缓存，因此长时间停用后可能需要重新上传已验证的有效授权，再手动运行发布。不要将明文 token 放进仓库或构建产物。
+
 ### 页面与数据口径
 
 - 页面采用浅色渐变与磨砂玻璃卡片，左侧展示从今天起的 7 天运动计划，右侧为一周健康指标，下方为运动记录和一周变化。电脑、平板和手机分别适配；点击计划或指标卡可展开明细。

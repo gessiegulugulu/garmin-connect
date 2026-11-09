@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
 dist/
+*.gpg
+garmin_tokens.json
 *.pyo__pycache__/
 *.pyc

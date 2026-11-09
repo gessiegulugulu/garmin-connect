@@ -18,6 +18,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from garmin_token_cache import read_session, validate_tokens, write_session
+
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 
@@ -121,14 +123,25 @@ def main() -> None:
     parser.add_argument("--date", type=date.fromisoformat, default=datetime.now(SHANGHAI).date())
     parser.add_argument("--output", type=Path, default=Path("data/garmin-week.json"))
     parser.add_argument("--token-store", type=Path, default=Path("~/.garminconnect").expanduser())
+    parser.add_argument("--encrypted-token-cache", type=Path,
+                        help="Restore and save the rotating session encrypted with GARMIN_TOKENS_JSON.")
     args = parser.parse_args()
     from garminconnect import Garmin
 
-    # Work on a temporary copy: refreshing a session never modifies the local login.
+    seed = os.environ.get("GARMIN_TOKENS_JSON", "")
+    if args.encrypted_token_cache and not seed:
+        raise ValueError("GARMIN_TOKENS_JSON is required for the encrypted cache.")
+
+    # Work on a temporary copy; CI persists only an encrypted refreshed session.
     with tempfile.TemporaryDirectory(prefix="garmin-dashboard-auth-") as folder:
         token_path = Path(folder) / "garmin_tokens.json"
-        if token_json := os.environ.get("GARMIN_TOKENS_JSON"):
-            json.loads(token_json)  # Reject malformed input before authentication.
+        if args.encrypted_token_cache and args.encrypted_token_cache.is_file():
+            token_json = read_session(args.encrypted_token_cache, seed)
+            token_path.write_text(token_json, encoding="utf-8")
+            token_path.chmod(0o600)
+            print("Restored Garmin session from encrypted cache.")
+        elif token_json := seed:
+            validate_tokens(token_json)
             token_path.write_text(token_json, encoding="utf-8")
             token_path.chmod(0o600)
         else:
@@ -138,8 +151,20 @@ def main() -> None:
             shutil.copyfile(source, token_path)
             token_path.chmod(0o600)
         api = Garmin(is_cn=os.environ.get("GARMIN_IS_CN", "false").lower() in ("true", "1", "yes"))
-        api.login(folder)
-        data = fetch_week(api, args.date)
+        original_tokens = json.loads(token_path.read_text(encoding="utf-8"))
+        logged_in = False
+        try:
+            api.login(folder)
+            logged_in = True
+            data = fetch_week(api, args.date)
+        finally:
+            if args.encrypted_token_cache:
+                refreshed = api.client.dumps()
+                # Keep rotated tokens even when a later profile/data request fails.
+                # A failed login with unchanged credentials must not replace a cache.
+                if logged_in or json.loads(refreshed) != original_tokens:
+                    write_session(args.encrypted_token_cache, refreshed, seed)
+                    print("Saved Garmin session to encrypted cache.")
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary = args.output.with_suffix(".tmp")
